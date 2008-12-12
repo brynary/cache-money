@@ -27,7 +27,7 @@ require 'cash/util/array'
 class ActiveRecord::Base
   def self.is_cached(options = {})
     include Cash
-    Config.create(self, options)
+    ::Cash::Config::Config.create(self, options)
   end
 end
 
