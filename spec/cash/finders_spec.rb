@@ -294,6 +294,18 @@ module Cash
             end
           end
         end
+
+        describe '#without_cache' do
+          describe 'when finders are called within the provided block' do
+            it 'uses the database not the cache' do
+              story = Story.create!
+              mock(Story).get.never
+              Story.without_cache do
+                Story.find(story.id).should == story
+              end
+            end
+          end
+        end
       end
 
       describe 'when the cache is not populated' do

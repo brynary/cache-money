@@ -38,7 +38,9 @@ module Cash
       end
 
       def add(key, value, options = {})
-        repository.add(cache_key(key), value, options[:ttl] || 0, options[:raw])
+        if repository.add(cache_key(key), value, options[:ttl] || 0, options[:raw]) == "NOT_STORED\r\n"
+          yield
+        end
       end
 
       def set(key, value, options = {})
@@ -46,15 +48,15 @@ module Cash
       end
 
       def incr(key, delta = 1, ttl = 0)
-        repository.incr(cache_key(key), delta) || begin
-          repository.add(cache_key(key), (result = yield).to_s, ttl, true)
+        repository.incr(cache_key = cache_key(key), delta) || begin
+          repository.add(cache_key, (result = yield).to_s, ttl, true) { repository.incr(cache_key) }
           result
         end
       end
 
       def decr(key, delta = 1, ttl = 0)
-        repository.decr(cache_key(key), delta) || begin
-          repository.add(cache_key(key), (result = yield).to_s, ttl, true)
+        repository.decr(cache_key = cache_key(key), delta) || begin
+          repository.add(cache_key, (result = yield).to_s, ttl, true) { repository.decr(cache_key) }
           result
         end
       end
@@ -64,7 +66,7 @@ module Cash
       end
 
       def cache_key(key)
-        "#{name}/#{key.to_s.gsub(' ', '+')}"
+        "#{name}:#{cache_config.version}/#{key.to_s.gsub(' ', '+')}"
       end
     end
 
@@ -72,7 +74,6 @@ module Cash
       def expire
         self.class.expire(id)
       end
-      alias_method :expire_cache, :expire
     end
   end
 end

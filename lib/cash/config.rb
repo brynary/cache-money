@@ -9,11 +9,10 @@ module Cash
 
     module ClassMethods
       def self.extended(a_class)
-        a_class.class_eval do
-          class << self
-            delegate :repository, :indices, :to => :@cache_config
-            alias_method_chain :inherited, :cache_config
-          end
+        class << a_class
+          attr_reader :cache_config
+          delegate :repository, :indices, :to => :@cache_config
+          alias_method_chain :inherited, :cache_config
         end
       end
 
@@ -25,6 +24,10 @@ module Cash
       def index(attributes, options = {})
         options.assert_valid_keys(:ttl, :order, :limit, :buffer)
         (@cache_config.indices.unshift(Index.new(@cache_config, self, attributes, options))).uniq!
+      end
+
+      def version(number)
+        @cache_config.options[:version] = number
       end
 
       def cache_config=(config)
@@ -50,6 +53,10 @@ module Cash
 
       def ttl
         @options[:ttl]
+      end
+
+      def version
+        @options[:version] || 1
       end
 
       def indices
